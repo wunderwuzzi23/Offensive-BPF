@@ -1,3 +1,6 @@
+This repo contains various ebpf resources, tools and scripts I created while learning more about the BPF technology. 
+
+
 # Offensive BPF
 
 Over the last few years eBPF has gained a lot of traction in the Linux community and beyond.

