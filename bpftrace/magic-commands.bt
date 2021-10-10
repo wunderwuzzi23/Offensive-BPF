@@ -3,6 +3,7 @@
 
 # Basic proof of concept to trigger commands based on incoming
 # messages with a special signature, in this case "OhhhBPF: "
+# This script does not have a feature to limit IPs.
 
 
 BEGIN
