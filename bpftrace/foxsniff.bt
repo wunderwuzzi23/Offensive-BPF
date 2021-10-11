@@ -1,8 +1,8 @@
 #include <net/sock.h>
 
-# Basic demo on how to hook user space APIs. This bpftrace script that 
-# traces uprobes for Firefox send/write API and out the buffer as string. 
-# There is a filter for "Socket Thread" - which is Firefox's comm.
+// Basic demo on how to hook user space APIs. This bpftrace script that 
+// traces uprobes for Firefox (NSS) write API and prints out the buffer as string. 
+// There is a filter for "Socket Thread".
 
 BEGIN
 {
@@ -19,11 +19,11 @@ uprobe:/usr/lib/x86_64-linux-gnu/libpthread.so:connect
     printf("%s [%d]: Connect: fd: %d, %s:%d\n",comm, pid, arg0, $ip, $port);
 }
 
-uprobe:/usr/lib/firefox/libnspr4.so:PR_Write,
-uprobe:/usr/lib/firefox/libnspr4.so:PR_Send
+uprobe:/usr/lib/firefox/libnspr4.so:PR_Write
 / comm == "Socket Thread" /
 { 
-    $i = (uint64) 0; 
+    $i   = (uint64) 0;
+    $adj = (uint64) 0;
 
     if ((str(arg1, 14) == "PRI * HTTP/2.0"))
     {
@@ -32,8 +32,13 @@ uprobe:/usr/lib/firefox/libnspr4.so:PR_Send
     }
 
     while ($i <= 4096)  //ideally this would be arg2, but Verifier complains
-    {       
-      printf("%s", str(arg1+$i, 16));  //API is very forgiving regarding len it seems
+    {      
+      if ((4096 - $i) < 0)
+      {
+         $adj = 4096 - $i;
+      } 
+
+      printf("%s", str(arg1+$i, 16 - $adj)); 
       $i = $i + 16;
       if ($i > arg2)
       {

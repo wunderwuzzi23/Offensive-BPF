@@ -1,10 +1,10 @@
 #include <net/sock.h>
 
 
-# Basic proof of concept to trigger commands based on incoming
-# messages with a special signature, in this case "OhhhBPF: "
-# The script requires to specify IP address (as integer!) and source port, 
-# that are required to be able to invoke commands
+// Basic proof of concept to trigger commands based on incoming
+// messages with a special signature, in this case "OhhhBPF: "
+// The script requires to specify IP address (as integer!) and source port, 
+// that are required to be able to invoke commands
 
 
 BEGIN

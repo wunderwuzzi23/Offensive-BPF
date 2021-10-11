@@ -1,0 +1,4 @@
+uprobe:/usr/lib/firefox/libnspr4.so:PR_Write
+{ 
+    printf("%s[%d](len=%d): %s (%r)\n", comm, pid, arg2, str(arg1, arg2), buf(arg1, arg2));
+}
