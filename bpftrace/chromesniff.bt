@@ -10,25 +10,19 @@ BEGIN
 }
 
 uprobe:/usr/lib/x86_64-linux-gnu/libpthread.so:connect
-/ comm == "Socket Thread"/ 
+// comm == "Socket Thread"/ 
 { 
     
     $addr = (struct sockaddr_in *) arg1;
     $ip = ntop($addr->sin_addr);
-    printf("%s [%d]: Connect: fd: %d, %s\n",comm, pid, arg0, $ip);
+    printf("%s [%d]: Connect: fd: %d, %s:%d\n",comm, pid, arg0, $ip);
 }
 
-uprobe:/usr/lib/firefox/libnspr4.so:PR_Write
-/ comm == "Socket Thread" /
+uprobe:/lib/x86_64-linux-gnu/libnspr4.so:PR_Write
+// comm == "Socket Thread" /
 { 
     $i   = (uint64) 0;
     $adj = (uint64) 0;
-
-    if ((str(arg1, 14) == "PRI * HTTP/2.0"))
-    {
-          //HTTP/2 Connection
-          //return;
-    }
 
     while ($i <= 4096)  //ideally this would be arg2, but Verifier complains
     {      
