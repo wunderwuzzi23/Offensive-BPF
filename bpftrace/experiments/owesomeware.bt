@@ -1,0 +1,56 @@
+struct test 
+{
+   char a;
+   char b;
+   char c;
+};
+
+tracepoint:syscalls:sys_enter_openat
+{ 
+    if (str(args->filename) == "/tmp/test")
+    {
+        printf("%s:enter_openat: %s\n", comm, str(args->filename));
+        @openat[tid] = args->filename;
+    }
+}
+
+tracepoint:syscalls:sys_exit_openat
+/ @openat[tid] /
+{ 
+    $filename = @openat[tid];
+    $fd = args->ret;
+
+    printf("%s:exit_openat:[%d](fd=%d): %s\n", comm, pid, args->ret, str($filename));
+}
+
+tracepoint:syscalls:sys_enter_read
+/ @openat[tid] /
+{ 
+    $filename = @openat[tid];
+   
+    if (str($filename) == "/tmp/test")
+    {
+        printf("%s:enter_read: %s\n", comm, str($filename));
+        @read[tid] = args->buf;
+    }
+}
+
+tracepoint:syscalls:sys_exit_read
+/ @read[tid] /
+{ 
+    $buf = (struct test*) @read[tid];
+    $fd = args->ret;
+
+
+    //$buf->a = 0;   <---- can't write to user buffer (bpf_probe_write_user not exposed in bpftrace)
+    printf("%d\n",$buf->a);
+
+    printf("%s:exit_read fd: %d Content: %s\n", comm, $fd, str(@read[tid], 10));
+}
+
+
+END
+{
+    clear(@openat);
+    clear(@read);
+}

@@ -1,0 +1,18 @@
+uprobe:/usr/lib/firefox/libnspr4.so:PR_Write
+{ 
+    printf("%s[%d](len=%d): %s (%r)\n", comm, pid, arg2, str(arg1, arg2), buf(arg1, arg2));
+}
+
+uprobe:/usr/lib/x86_64-linux-gnu/libssl.so.1.1:SSL_write
+{ 
+  printf("%s[%d](len=%d): %s (%r)\n", comm, pid, arg2, str(arg1, arg2), buf(arg1, arg2));
+}
+
+
+//uprobe:/lib/x86_64-linux-gnu/libsqlite3.so.0:*sql*
+//uprobe:/opt/google/chrome/chrome:*ssl*
+// comm == "chrome" /
+//{ 
+  //printf("%s[%d]::{%s} (len=%d): %s (%r)\n", comm, pid, func, arg2, str(arg1, arg2), buf(arg1, arg2));
+ // printf("%s[%d]::{%s} (len=%d): %s\n", comm, pid, func, arg2, str(arg1, arg2));
+//}

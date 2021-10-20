@@ -1,0 +1,28 @@
+struct linux_dirent64 {
+	u64 d_ino;
+	s64 d_off;
+	short unsigned int d_reclen;
+	unsigned char d_type;
+	char d_name[0];
+};
+
+tracepoint:syscalls:sys_enter_getdents64
+{ 
+  //printf("%s[%d]::{%s}: %s.\n", comm, pid, probe, ((struct dirent *) args->dirent)->d_name);
+  
+  printf("ENTER: %s\n", ((struct linux_dirent64 *) args->dirent)->d_name);
+  
+  
+  @dents[tid] = args->dirent;
+}
+
+tracepoint:syscalls:sys_exit_getdents64
+/ @dents[tid] /
+{ 
+  $dirinfo  = (struct linux_dirent64 *) @dents[tid];
+  
+  printf("%s[%d]::{%s}[ret=%d]: inode: %d. %s t:%d.\n", 
+      comm, pid, probe, 
+      args->ret, $dirinfo->d_ino, $dirinfo->d_name, $dirinfo->d_reclen);
+}
+

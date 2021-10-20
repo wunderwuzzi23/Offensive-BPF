@@ -1,0 +1,7 @@
+src/c/.output/
+src/c/bootstrap
+src/c/minimal
+src/c/uprobe
+src/c/kprobe
+src/c/fentry
+src/c/obpf

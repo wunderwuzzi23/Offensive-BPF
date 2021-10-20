@@ -1,0 +1,21 @@
+kprobe:__x64_sys_access,
+kprobe:__x64_sys_faccessat,
+kprobe:__x64_sys_faccessat2
+/ comm == "bash" /
+{
+    override(-1);
+
+    $filename = arg1;
+    printf("%s:%s: %s\n", comm, probe, str($filename));
+/*
+    if (str($filename) != "") {
+       //printf("%s:%s: %s\n", comm, probe, str($filename));
+    }
+
+    if (strncmp( str($filename), "/tmp/test/", 10) == 0 )
+    {
+      printf("%s:%s: %s (Hiding)\n", comm, probe, str($filename));
+      override(-1);
+    }
+*/
+}
