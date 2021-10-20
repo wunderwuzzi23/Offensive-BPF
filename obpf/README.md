@@ -38,3 +38,7 @@ All rights reserved.
 /* Copyright (c) 2020 Facebook */
 
 
+# Disclaimer
+
+Penetration testing requires authorization from proper stakeholders. Information here is provided for research and educational purposes to advance understanding of attacks and countermeasures to help secure the Internet.
+

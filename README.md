@@ -128,9 +128,9 @@ All these talks provide great insights and are very informative.
 
 Cheers.
 
-[@wunderwuzzi23](https://twitter.com/wunderwuzzi23)
+## Disclaimer
 
-PS.: Any feedback or ideas, feel free send me a message
+Penetration testing requires authorization from proper stakeholders. Information here is provided for research and educational purposes to advance understanding of attacks and countermeasures to help secure the Internet.
 
 
 ## Resources
