@@ -1,6 +1,11 @@
 # Offensive BPF obpf experiments and programs written using libbpf-bootstrap
 
-This repo is entirely based on the original `libbpf-bootstrap` and it's scaffolding. I created one new BPF program called `obpf` at this point.
+This repo is entirely based on the original `libbpf-bootstrap` and it's scaffolding. 
+
+
+I created one new BPF program called `obpf` which hooks `getdents64` to overwrite filenames on the fly.
+
+More details about this program in the [following blog post](https://embracethered.com/blog/posts/2021/offensive-bpf-libbpf-bpf_probe_write_user/).
 
 ```
 cd src/c
@@ -12,6 +17,7 @@ Usage:
 ```
 sudo ./obpf
 ```
+
 
 
 # Credits
