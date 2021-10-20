@@ -1,6 +1,6 @@
 This repo contains various ebpf resources, tools and scripts I created while learning more about the BPF technology. 
 
-## **This repo is work in progress.**
+**Note: This repo is still work in progress, so might change quite a bit over time.**
 
 
 # Offensive BPF
