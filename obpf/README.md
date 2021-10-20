@@ -1,4 +1,4 @@
-# Offensive BPF experiments and programs written using libbpf-bootstrap
+# Offensive BPF experiments written using libbpf-bootstrap
 
 This repo is entirely based on the original `libbpf-bootstrap` and it's scaffolding. 
 
