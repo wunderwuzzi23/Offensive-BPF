@@ -1,4 +1,20 @@
-Credits:
+# Offensive BPF obpf experiments and programs written using libbpf-bootstrap
+
+This repo is entirely based on the original `libbpf-bootstrap` and it's scaffolding. I created one new BPF program called `obpf` at this point.
+
+```
+cd src/c
+make
+```
+
+Usage:
+
+```
+sudo ./obpf
+```
+
+
+# Credits
 
 This folder is based on `libbpf-bootstrap` [repo](https://github.com/libbpf/libbpf-bootstrap)
 
@@ -13,4 +29,5 @@ All rights reserved.
 
 // SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 /* Copyright (c) 2020 Facebook */
+
 
