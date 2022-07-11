@@ -1,3 +1,6 @@
+// Run with: sudo bpftrace pamsnoop.bt
+
+
 // Partial helper struct to allow convenient casting of the user
 // See https://github.com/linux-pam/linux-pam/blob/master/libpam/pam_private.h
 struct partial_pam_handle {
