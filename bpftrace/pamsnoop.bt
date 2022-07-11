@@ -15,12 +15,15 @@ BEGIN
       printf("Ctrl-C to exit.\n\n");
 }
 
-uprobe:/lib/x86_64-linux-gnu/libpam.so.0:pam_get_authtok {
+uprobe:/lib/x86_64-linux-gnu/libpam.so.0:pam_get_authtok 
+{
       @user[tid] = ((struct partial_pam_handle *)arg0)->user;
       @authtok[tid] =  arg2;
 }
     
-uretprobe:/lib/x86_64-linux-gnu/libpam.so.0:pam_get_authtok /@user[tid]/ {
+uretprobe:/lib/x86_64-linux-gnu/libpam.so.0:pam_get_authtok 
+/@user[tid]/ 
+{
   
       printf("Program: %s, Username: %s, AuthTok: %s\n", 
              comm, //process
